@@ -3,6 +3,7 @@ import warnings
 
 from datetime import datetime, timedelta
 
+from django.conf import settings
 from django.contrib.auth.backends import ModelBackend
 from django.core.cache import cache
 
@@ -20,6 +21,8 @@ class RateLimitMixin(object):
     requests = 30
     username_key = 'username'
     no_username = False
+    suppress_warnings = hasattr(settings, 'RATELIMIT_SUPPRESS_WARNINGS') \
+        and settings.RATELIMIT_SUPPRESS_WARNINGS
 
     def authenticate(self, request=None, **kwargs):
         username = None
@@ -38,7 +41,7 @@ class RateLimitMixin(object):
                     )
                 )
                 raise RateLimitException('Rate-limit reached', counts)
-        else:
+        elif not self.suppress_warnings:
             warnings.warn(u"No request passed to the backend, unable to "
                           u"rate-limit. Username was '%s'" % username,
                           stacklevel=2)
